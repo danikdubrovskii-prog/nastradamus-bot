@@ -3,6 +3,7 @@ import logging
 import sqlite3
 import random
 from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -11,6 +12,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 BOT_TOKEN = "8004087167:AAEeWgNFJhBPZ4sDIFRpmq7KyIZSwr6D8lk"
 logging.basicConfig(level=logging.INFO)
 
+# Parse mode через DefaultBotProperties (новый способ в aiogram 3.13.1)
 default = DefaultBotProperties(parse_mode='HTML')
 bot = Bot(token=BOT_TOKEN, default=default)
 dp = Dispatcher()
@@ -131,7 +133,7 @@ def main_menu(lang='ru'):
     return kb
 
 # === РЕГИСТРАЦИЯ ===
-@dp.message_handler(commands=['start'])
+@dp.message(Command("start"))
 async def start(message: types.Message):
     user = get_user(message.from_user.id)
     if user:
@@ -140,13 +142,13 @@ async def start(message: types.Message):
         return
     await message.answer("Выберите день рождения:", reply_markup=days_kb())
 
-@dp.callback_query_handler(lambda c: c.data.startswith('day_'))
+@dp.callback_query(lambda c: c.data and c.data.startswith('day_'))
 async def select_day(call: types.CallbackQuery):
     day = call.data.split('_')[1]
     await dp.current_state(user=call.from_user.id).set_data({"day": day})
     await call.message.edit_text("Выберите месяц:", reply_markup=months_kb())
 
-@dp.callback_query_handler(lambda c: c.data.startswith('month_'))
+@dp.callback_query(lambda c: c.data and c.data.startswith('month_'))
 async def select_month(call: types.CallbackQuery):
     state = dp.current_state(user=call.from_user.id)
     data = await state.get_data()
@@ -154,7 +156,7 @@ async def select_month(call: types.CallbackQuery):
     await state.set_data(data)
     await call.message.edit_text("Выберите год:", reply_markup=years_kb())
 
-@dp.callback_query_handler(lambda c: c.data.startswith('year_'))
+@dp.callback_query(lambda c: c.data and c.data.startswith('year_'))
 async def select_year(call: types.CallbackQuery):
     state = dp.current_state(user=call.from_user.id)
     data = await state.get_data()
@@ -179,20 +181,20 @@ async def select_year(call: types.CallbackQuery):
     await call.message.answer("Главное меню:", reply_markup=main_menu())
 
 # === МЕНЮ ===
-@dp.callback_query_handler(lambda c: c.data == "today")
+@dp.callback_query(lambda c: c.data == "today")
 async def today_horoscope(call: types.CallbackQuery):
     user = get_user(call.from_user.id)
     if user:
-        await call.message.edit_text(f"Гороскоп на сегодня для {user[2]}:\n\nХороший день!")
+        await call.message.edit_text(f"Г:"Гороскоп на сегодня для {user[2]}:\n\nХороший день!")
 
-@dp.callback_query_handler(lambda c: c.data == "fortune")
+@dp.callback_query(lambda c: c.data == "fortune")
 async def fortune(call: types.CallbackQuery):
     await call.message.edit_text(f"Колесо Фортуны:\n\n{get_fortune()}")
     await asyncio.sleep(2)
     lang = get_user(call.from_user.id)[4] if get_user(call.from_user.id) else 'ru'
     await call.message.answer("Меню:", reply_markup=main_menu(lang))
 
-@dp.callback_query_handler(lambda c: c.data == "lang")
+@dp.callback_query(lambda c: c.data == "lang")
 async def change_lang(call: types.CallbackQuery):
     user = get_user(call.from_user.id)
     new_lang = 'en' if (user and user[4] == 'ru') else 'ru'
@@ -201,7 +203,7 @@ async def change_lang(call: types.CallbackQuery):
     await asyncio.sleep(1)
     await call.message.answer("Menu:", reply_markup=main_menu(new_lang))
 
-@dp.callback_query_handler(lambda c: c.data == "subscribe")
+@dp.callback_query(lambda c: c.data == "subscribe")
 async def subscribe_btn(call: types.CallbackQuery):
     toggle_subscribe(call.from_user.id)
     lang = get_user(call.from_user.id)[4] if get_user(call.from_user.id) else 'ru'
@@ -211,17 +213,17 @@ async def subscribe_btn(call: types.CallbackQuery):
     await call.message.answer("Меню:", reply_markup=main_menu(lang))
 
 # === КОМАНДЫ ===
-@dp.message_handler(commands=['subscribe'])
+@dp.message(Command("subscribe"))
 async def subscribe_cmd(message: types.Message):
     toggle_subscribe(message.from_user.id)
     await message.answer("Подписка включена!")
 
-@dp.message_handler(commands=['unsubscribe'])
+@dp.message(Command("unsubscribe"))
 async def unsubscribe_cmd(message: types.Message):
     toggle_subscribe(message.from_user.id)
     await message.answer("Подписка отключена!")
 
-@dp.message_handler(commands=['myinfo'])
+@dp.message(Command("myinfo"))
 async def myinfo(message: types.Message):
     user = get_user(message.from_user.id)
     if user:
@@ -249,4 +251,3 @@ async def on_startup(dispatcher):
 if __name__ == '__main__':
     dp.startup.register(on_startup)
     asyncio.run(dp.start_polling(bot))
-    Фикс: DefaultBotProperties + dp.start_polling(bot)
