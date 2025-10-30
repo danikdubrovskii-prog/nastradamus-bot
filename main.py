@@ -247,3 +247,4 @@ async def on_startup():
 if __name__ == '__main__':
     dp.startup.register(on_startup)
     dp.run_polling(bot)
+# Фикс: aiogram 3.13.1 — dp.run_polling(bot)
