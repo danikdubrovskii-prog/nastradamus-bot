@@ -4,17 +4,17 @@ import sqlite3
 import random
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils import executor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+# === КОНФИГ ===
 BOT_TOKEN = "8004087167:AAEeWgNFJhBPZ4sDIFRpmq7KyIZSwr6D8lk"
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
-dp = Dispatcher(bot)
+dp = Dispatcher()
 scheduler = AsyncIOScheduler()
 
-# База данных
+# === БАЗА ДАННЫХ ===
 DB_NAME = "users.db"
 
 def init_db():
@@ -71,7 +71,7 @@ def get_subscribed_users():
     conn.close()
     return users
 
-# Гороскоп
+# === ГОРОСКОП ===
 def get_zodiac(day, month):
     if (month == 3 and day >= 21) or (month == 4 and day <= 19): return "Овен"
     if (month == 4 and day >= 20) or (month == 5 and day <= 20): return "Телец"
@@ -98,7 +98,7 @@ def get_fortune():
         "День идеален для новых начинаний."
     ])
 
-# Клавиатуры
+# === КЛАВИАТУРЫ ===
 def days_kb():
     kb = InlineKeyboardMarkup(row_width=7)
     for d in range(1, 32):
@@ -128,21 +128,21 @@ def main_menu(lang='ru'):
     kb.add(InlineKeyboardButton("Подписка" if lang=='ru' else "Subscribe", callback_data="subscribe"))
     return kb
 
-# Регистрация
+# === РЕГИСТРАЦИЯ ===
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     user = get_user(message.from_user.id)
     if user:
         lang = user[4] if len(user) > 4 else 'ru'
-        await message.answer("🔮 Главное меню:", reply_markup=main_menu(lang))
+        await message.answer("Главное меню:", reply_markup=main_menu(lang))
         return
-    await message.answer("🔮 Выберите день рождения:", reply_markup=days_kb())
+    await message.answer("Выберите день рождения:", reply_markup=days_kb())
 
 @dp.callback_query_handler(lambda c: c.data.startswith('day_'))
 async def select_day(call: types.CallbackQuery):
     day = call.data.split('_')[1]
     await dp.current_state(user=call.from_user.id).set_data({"day": day})
-    await call.message.edit_text("📅 Выберите месяц:", reply_markup=months_kb())
+    await call.message.edit_text("Выберите месяц:", reply_markup=months_kb())
 
 @dp.callback_query_handler(lambda c: c.data.startswith('month_'))
 async def select_month(call: types.CallbackQuery):
@@ -150,7 +150,7 @@ async def select_month(call: types.CallbackQuery):
     data = await state.get_data()
     data["month"] = call.data.split('_')[1]
     await state.set_data(data)
-    await call.message.edit_text("🎂 Выберите год:", reply_markup=years_kb())
+    await call.message.edit_text("Выберите год:", reply_markup=years_kb())
 
 @dp.callback_query_handler(lambda c: c.data.startswith('year_'))
 async def select_year(call: types.CallbackQuery):
@@ -168,24 +168,24 @@ async def select_year(call: types.CallbackQuery):
     add_user(call.from_user.id, f"{day}.{month}.{year}", zodiac, eastern)
 
     await call.message.edit_text(
-        f"✅ Регистрация завершена!\n"
-        f"📅 Дата: {day}.{month}.{year}\n"
-        f"♈ Знак: {zodiac}\n"
-        f"🐉 Восточный: {eastern}"
+        f"Регистрация завершена!\n"
+        f"Дата: {day}.{month}.{year}\n"
+        f"Знак: {zodiac}\n"
+        f"Восточный: {eastern}"
     )
     await asyncio.sleep(1)
-    await call.message.answer("🔮 Главное меню:", reply_markup=main_menu())
+    await call.message.answer("Главное меню:", reply_markup=main_menu())
 
-# Меню
+# === МЕНЮ ===
 @dp.callback_query_handler(lambda c: c.data == "today")
 async def today_horoscope(call: types.CallbackQuery):
     user = get_user(call.from_user.id)
     if user:
-        await call.message.edit_text(f"🌟 Гороскоп на сегодня для {user[2]}:\n\nХороший день для действий!")
+        await call.message.edit_text(f"Гороскоп на сегодня для {user[2]}:\n\nХороший день!")
 
 @dp.callback_query_handler(lambda c: c.data == "fortune")
 async def fortune(call: types.CallbackQuery):
-    await call.message.edit_text(f"🎡 Колесо Фортуны:\n\n{get_fortune()}")
+    await call.message.edit_text(f"Колесо Фортуны:\n\n{get_fortune()}")
     await asyncio.sleep(2)
     lang = get_user(call.from_user.id)[4] if get_user(call.from_user.id) else 'ru'
     await call.message.answer("Меню:", reply_markup=main_menu(lang))
@@ -195,7 +195,7 @@ async def change_lang(call: types.CallbackQuery):
     user = get_user(call.from_user.id)
     new_lang = 'en' if (user and user[4] == 'ru') else 'ru'
     set_lang(call.from_user.id, new_lang)
-    await call.message.edit_text(f"🌐 Язык: {new_lang.upper()}")
+    await call.message.edit_text(f"Язык: {new_lang.upper()}")
     await asyncio.sleep(1)
     await call.message.answer("Menu:", reply_markup=main_menu(new_lang))
 
@@ -204,44 +204,46 @@ async def subscribe_btn(call: types.CallbackQuery):
     toggle_subscribe(call.from_user.id)
     lang = get_user(call.from_user.id)[4] if get_user(call.from_user.id) else 'ru'
     status = "включена" if get_user(call.from_user.id)[5] else "отключена"
-    await call.message.edit_text(f"📩 Подписка {status}!")
+    await call.message.edit_text(f"Подписка {status}!")
     await asyncio.sleep(1)
     await call.message.answer("Меню:", reply_markup=main_menu(lang))
 
-# Команды
+# === КОМАНДЫ ===
 @dp.message_handler(commands=['subscribe'])
 async def subscribe_cmd(message: types.Message):
     toggle_subscribe(message.from_user.id)
-    await message.answer("📩 Подписка включена!")
+    await message.answer("Подписка включена!")
 
 @dp.message_handler(commands=['unsubscribe'])
 async def unsubscribe_cmd(message: types.Message):
     toggle_subscribe(message.from_user.id)
-    await message.answer("📩 Подписка отключена!")
+    await message.answer("Подписка отключена!")
 
 @dp.message_handler(commands=['myinfo'])
 async def myinfo(message: types.Message):
     user = get_user(message.from_user.id)
     if user:
-        await message.answer(f"📋 Ваши данные:\nДата: {user[1]}\nЗнак: {user[2]}\nВосточный: {user[3]}")
+        await message.answer(f"Ваши данные:\nДата: {user[1]}\nЗнак: {user[2]}\nВосточный: {user[3]}")
     else:
-        await message.answer("Нет данных. Напишите /start")
+        await message.answer("Нет данных. /start")
 
-# Рассылка
+# === РАССЫЛКА ===
 async def daily_horoscope():
     users = get_subscribed_users()
     for uid in users:
         try:
             user = get_user(uid)
-            await bot.send_message(uid, f"🌅 Доброе утро!\nГороскоп для {user[2]} на сегодня:\n\nХороший день!")
-        except Exception as e:
-            print(f"Ошибка рассылки: {e}")
+            await bot.send_message(uid, f"Доброе утро!\nГороскоп для {user[2]}: Хороший день!")
+        except:
+            pass
 
 # === ЗАПУСК ===
-async def on_startup(_):
+async def on_startup():
     init_db()
+    scheduler.add_job(daily_horoscope, 'cron', hour=8, minute=0)
     scheduler.start()
     print("Бот запущен...")
 
 if __name__ == '__main__':
-    dp.run_polling(bot, skip_updates=True, on_startup=on_startup)
+    dp.startup.register(on_startup)
+    dp.run_polling(bot)
