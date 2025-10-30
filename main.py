@@ -11,7 +11,7 @@ BOT_TOKEN = "8004087167:AAEeWgNFJhBPZ4sDIFRpmq7KyIZSwr6D8lk"
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
-dp = Dispatcher()
+dp = Dispatcher(bot)
 scheduler = AsyncIOScheduler()
 
 # === БАЗА ДАННЫХ ===
@@ -247,5 +247,3 @@ async def on_startup():
 if __name__ == '__main__':
     dp.startup.register(on_startup)
     dp.run_polling(bot)
-
-dp.run_polling(bot) — aiogram 3.13.1
