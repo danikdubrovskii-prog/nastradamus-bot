@@ -4,14 +4,16 @@ import sqlite3
 import random
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # === КОНФИГ ===
 BOT_TOKEN = "8004087167:AAEeWgNFJhBPZ4sDIFRpmq7KyIZSwr6D8lk"
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
-dp = Dispatcher(bot)
+default = DefaultBotProperties(parse_mode='HTML')
+bot = Bot(token=BOT_TOKEN, default=default)
+dp = Dispatcher()
 scheduler = AsyncIOScheduler()
 
 # === БАЗА ДАННЫХ ===
@@ -246,4 +248,5 @@ async def on_startup(dispatcher):
 
 if __name__ == '__main__':
     dp.startup.register(on_startup)
-    asyncio.run(dp.start_polling())
+    asyncio.run(dp.start_polling(bot))
+    Фикс: DefaultBotProperties + dp.start_polling(bot)
