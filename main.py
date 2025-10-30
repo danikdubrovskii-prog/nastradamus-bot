@@ -185,7 +185,7 @@ async def select_year(call: types.CallbackQuery):
 async def today_horoscope(call: types.CallbackQuery):
     user = get_user(call.from_user.id)
     if user:
-        await call.message.edit_text(f"Г:"Гороскоп на сегодня для {user[2]}:\n\nХороший день!")
+        await call.message.edit_text(f"Гороскоп на сегодня для {user[2]}:\n\nХороший день!")
 
 @dp.callback_query(lambda c: c.data == "fortune")
 async def fortune(call: types.CallbackQuery):
