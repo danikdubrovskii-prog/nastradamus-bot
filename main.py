@@ -238,9 +238,10 @@ async def daily_horoscope():
             print(f"Ошибка рассылки: {e}")
 
 # === ЗАПУСК ===
-if __name__ == '__main__':
+async def on_startup(_):
     init_db()
-    scheduler.add_job(daily_horoscope, 'cron', hour=8, minute=0)
     scheduler.start()
     print("Бот запущен...")
-    executor.start_polling(dp, skip_updates=True)
+
+if __name__ == '__main__':
+    dp.run_polling(bot, skip_updates=True, on_startup=on_startup)
