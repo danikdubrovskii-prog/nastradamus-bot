@@ -238,7 +238,7 @@ async def daily_horoscope():
             pass
 
 # === ЗАПУСК ===
-async def on_startup():
+async def on_startup(dispatcher):
     init_db()
     scheduler.add_job(daily_horoscope, 'cron', hour=8, minute=0)
     scheduler.start()
@@ -246,5 +246,4 @@ async def on_startup():
 
 if __name__ == '__main__':
     dp.startup.register(on_startup)
-    dp.run_polling(bot)
-# Фикс: aiogram 3.13.1 — dp.run_polling(bot)
+    asyncio.run(dp.start_polling())
